@@ -18,6 +18,6 @@ constexpr inline complex complexSquare(const complex & a) noexcept;
 
 inline double complex_sqr_mag(const complex& in) noexcept;
 
-void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, double y_max);
+void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, double y_max, SDL_Surface** target);
 
 constexpr inline complex operator+(const complex& a, const complex& b);

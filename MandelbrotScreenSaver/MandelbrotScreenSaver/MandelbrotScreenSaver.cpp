@@ -1,17 +1,21 @@
 ﻿// MandelbrotScreenSaver.cpp : Defines the entry point for the application.
 //
+#include <omp.h>
 #include <SDL.h>
 //#include <alloca.h>
 #include "MandelbrotScreenSaver.h"
 
 constexpr int SCREEN_WIDTH	=	680;
 constexpr int SCREEN_HEIGHT =	680;
-int MAX_ITER = 100;
+int MAX_ITER = 400;
 
 using namespace std;
 SDL_Renderer* renderer;
 
 
+const int nprocs = omp_get_num_procs() -2 >= 2 ? omp_get_num_procs() - 2 : 2;
+
+complex center;
 
 int main(int argc, char* argv[])
 {
@@ -20,9 +24,16 @@ int main(int argc, char* argv[])
 	SDL_Window* window = SDL_CreateWindow("Mandelbrot set screen saver", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 	renderer = SDL_CreateRenderer(window, -1, 0);
 
-	complex center;
-	center.real = -0.995;
-	center.img = 0.3;
+	SDL_Surface* screen_surface = SDL_GetWindowSurface(window);
+
+	SDL_Surface** fractal_parts = new SDL_Surface*[nprocs];
+
+	//Puede dejar pixeles muertos
+	for (int i = 0; i < nprocs; i++)
+		fractal_parts[i] = SDL_CreateRGBSurface(0, SCREEN_WIDTH/nprocs, SCREEN_HEIGHT, 32, 0, 0, 0, 0);
+
+	center.real = -1.2;
+	center.img = 0.31509;
 
 	complex bot_left_bound;
 	bot_left_bound.real = -2;
@@ -33,8 +44,8 @@ int main(int argc, char* argv[])
 
 
 	double progress = 0;
-	const double base_step = 0.00005;
-	const double original_step = 0.17;
+	const double base_step = 0.000006;
+	const double original_step = 0.239;
 
 	double step = original_step;
 	bool running = true;
@@ -48,35 +59,55 @@ int main(int argc, char* argv[])
 				running = false;
 				break;
 		}
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-		SDL_RenderClear(renderer);
+		
 
 		
 
 
 		Uint64 start = SDL_GetPerformanceCounter();
 
-		step = step * 0.85 + base_step;
+		step = step * 0.80001 + base_step;
 		progress += step;
-		if (progress > 0.99999999)
+		if (progress > 0.9999999999)
 		{
 			progress = 0;
 			step = original_step;
 		}
 		
-		drawMandelbrot(SCREEN_WIDTH, SCREEN_HEIGHT,
+
+
+
+#pragma omp parallel num_threads (nprocs)
+		{
+		drawMandelbrot(SCREEN_WIDTH/nprocs, SCREEN_HEIGHT,
 			lerp(bot_left_bound.real, center.real, progress),
-			 lerp(bot_left_bound.img, center.img, progress),
-			 lerp(center.real, top_right_bound.real,1- progress),
-			 lerp(center.img,  top_right_bound.img,	1- progress));
+			lerp(bot_left_bound.img, center.img, progress),
+			lerp( top_right_bound.real, center.real, progress),
+			lerp(top_right_bound.img, center.img, progress), fractal_parts);
+		}
+		SDL_Rect rect;
+		rect.y = 0;
+		for (int i = 0; i < nprocs; i++)
+		{
+			rect.w = fractal_parts[i]->w;
+			rect.h = fractal_parts[i]->h;
+			rect.x = SCREEN_WIDTH / nprocs * i;
+			SDL_BlitSurface(fractal_parts[i], NULL, screen_surface, &rect);
+			SDL_FillRect(fractal_parts[i], NULL, SDL_MapRGB(fractal_parts[i]->format, 0, 0, 0));
+		}
 
 		Uint64 end = SDL_GetPerformanceCounter();
 		float elapsed = (end - start) / (float)SDL_GetPerformanceFrequency();
 		cout << "FPS:\t" << 1.0f / elapsed << "\tDelta Time:\t" << elapsed << "\tProgress:\t" << progress << endl;
 
-		SDL_RenderPresent(renderer);
+		SDL_UpdateWindowSurface(window);
+		//SDL_RenderPresent(renderer);
 	}
 	SDL_DestroyRenderer(renderer);
+	SDL_FreeSurface(screen_surface);
+	for (int i = 0; i < nprocs; i++)
+		SDL_FreeSurface(fractal_parts[i]);
+	delete[]fractal_parts;
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 	return 0;
@@ -93,23 +124,38 @@ constexpr inline complex complexSquare(const complex& in) noexcept
 
 inline double complex_sqr_mag(const complex& in) noexcept
 {
-	return sqrt(in.real*in.real + in.img*in.img);
+	return in.real*in.real + in.img*in.img;
 }
 
-void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, double y_max)
+
+
+void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, double y_max, SDL_Surface** target)
 {
 	complex c;
 	complex z;
-	bool inside;
-	
-	const double x_step = (x_max - x_min) / (double)w;
-	const double y_step = (y_max - y_min) / (double)h;
+	const double x_step = (x_max - x_min) / (double)SCREEN_WIDTH;
+	const double y_step = (y_max - y_min) / (double)SCREEN_HEIGHT;
+	const int t_id = omp_get_thread_num();
+	int x = t_id * SCREEN_WIDTH / nprocs;
+	int y = 0;
+
+	Uint32* target_pixel;
+
+	SDL_LockSurface(target[t_id]);
 	for (int i = 0; i < w; i++)
 		for (int j = 0; j < h; j++)
 		{
-			inside = true;
-			c.real = x_min	+	(double)i * x_step;
-			c.img = y_max	-	(double)j * y_step;
+			c.real = x_min + (double)(i+x) * x_step;
+			c.img = y_max - (double)j * y_step;
+			
+			if (abs(c.real - center.real) < 0.001 || abs(c.img - center.img) < 0.001)
+			{
+				 target_pixel = (Uint32*)((Uint8*)target[t_id]->pixels
+					+ j * target[t_id]->pitch
+					+ i * target[t_id]->format->BytesPerPixel);
+				*target_pixel = SDL_MapRGB(target[t_id]->format, 255, 255, 255);
+			}
+
 
 			z.real = 0;
 			z.img = 0;
@@ -117,19 +163,26 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
 			for (int it = 0; it < MAX_ITER; it++)
 			{
 				z = complexSquare(z) + c;
-
 				if (complex_sqr_mag(z) > 4.0)
 				{
 					it++;
-					SDL_SetRenderDrawColor(renderer, 255 / it, 255 / ((i+1)%it +1), 255 / ((j+1)%it +1), 255);
-					SDL_RenderDrawPoint(renderer, i, j);
-					inside = false;
+
+					target_pixel = (Uint32*)((Uint8*)target[t_id]->pixels
+						+ j * target[t_id]->pitch
+						+ i * target[t_id]->format->BytesPerPixel);
+					
+					const uint8_t r = 255 / ((i * j) % it + 1) + 20;
+					const uint8_t g = 255 / ((i + 1) % it + 1) + 20;
+					const uint8_t b = 255 / ((j + 1) % it + 1) + 20;
+					*target_pixel = SDL_MapRGB(target[t_id]->format, r, g, b);
+
 					break;
 				}
 			}
+			
 		}
-
 	
+	SDL_UnlockSurface(target[t_id]);
 }
 
 
