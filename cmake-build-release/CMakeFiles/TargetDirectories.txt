@@ -1,3 +1,0 @@
-C:/Users/Zaray Corado/Desktop/Paralela/projects/project-01/cmake-build-release/CMakeFiles/project_01.dir
-C:/Users/Zaray Corado/Desktop/Paralela/projects/project-01/cmake-build-release/CMakeFiles/edit_cache.dir
-C:/Users/Zaray Corado/Desktop/Paralela/projects/project-01/cmake-build-release/CMakeFiles/rebuild_cache.dir
