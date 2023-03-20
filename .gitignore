@@ -17,3 +17,5 @@ bld/
 [Ll]og/
 [Ll]ogs/
 out/
+.idea
+cmake-build-debug
