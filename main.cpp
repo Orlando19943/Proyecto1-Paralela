@@ -9,7 +9,7 @@
 
 constexpr int SCREEN_WIDTH	=	680;
 constexpr int SCREEN_HEIGHT =	680;
-int MAX_ITER = 250;
+int MAX_ITER = 200;
 
 using namespace std;
 SDL_Renderer* renderer;
@@ -18,6 +18,10 @@ SDL_Renderer* renderer;
 const int number_process = omp_get_num_procs() -2 >= 2 ? omp_get_num_procs() - 2 : 2;
 
 Complex center;
+
+uint8_t map (uint8_t x, uint8_t in_min, uint8_t in_max, uint8_t out_min, uint8_t out_max){
+    return (x-in_min) * (out_max -out_min) / (in_max-in_min) +out_min;
+}
 
 int main(int argc, char* argv[]){
 
@@ -46,8 +50,8 @@ int main(int argc, char* argv[]){
 
 
 	double progress = 0;
-	const double base_step = 0.000002;
-	const double original_step = 0.241;
+	const double base_step = 0.00002;
+	const double original_step = 0.243;
 
 	double step = original_step;
 	bool running = true;
@@ -132,8 +136,8 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
     for (i = 0; i < w; i++)
         for (j = 0; j < h; j++)
         {
-            c.real = x_min + (double)(i+x) * x_step;
-            c.img = y_max - (double)j * y_step;
+            c.real = x_min + (double) (i+x) * x_step;
+            c.img = y_max - (double) j * y_step;
 
 
 #if SHOW_TARGET_ZOOM
@@ -162,9 +166,17 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
                                              + j * target[t_id]->pitch
                                              + i * target[t_id]->format->BytesPerPixel);
 
-                    const uint8_t r = (k) % 235 + 20;
-                    const uint8_t g = (k) % 235 + 20;
-                    const uint8_t b = ((int)z.img*k) % 235 + 20;
+                    uint8_t bright = map(k, 0,MAX_ITER,0,255);
+                    if ((k == MAX_ITER) || bright < 5){
+                        bright = 0;
+                    }
+                    const uint8_t r = map(bright*bright,0,255,0,255);
+                    const uint8_t g = bright;
+                    const uint8_t b = map(::sqrt(bright),0, ::sqrt(255),0,255);
+
+//                    const uint8_t r = (k) % 255;
+//                    const uint8_t g = (k) % 255;
+//                    const uint8_t b = ((int) z.img * k) % 235;
                     *target_pixel = SDL_MapRGB(target[t_id]->format, r, g, b);
 
                     break;
