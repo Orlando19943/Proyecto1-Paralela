@@ -7,8 +7,8 @@
 #include "Complex.h"
 #include "Complex.cpp"
 
-constexpr int SCREEN_WIDTH	=	680;
-constexpr int SCREEN_HEIGHT =	680;
+constexpr int SCREEN_WIDTH	=	640;
+constexpr int SCREEN_HEIGHT =	480;
 int MAX_ITER = 200;
 
 using namespace std;
