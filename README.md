@@ -19,7 +19,7 @@ Primero, asegúrate de tener instaladas las siguientes dependencias
 ### Configuración de SDL en CLION
 La configuración de SDL en CLION se realizará mediante CMAKE, para ello debes de seguir los siguientes pasos provistos por [Pablo Méndez](https://github.com/El-Mendez/Paralela-Proyecto1/blob/main/CMakeLists.txt):
 
- Markup : 1. Guardar SDL dentro de un directorio llamado lib fuera del proyecto
+ 1. Guardar SDL dentro de un directorio llamado lib fuera del proyecto
           2. En el caso de Windows es necesario crear un perfil de Cmake para agregar ciertas variables de entorno. Si deseas utilizar el CMAKE provisto dentro del              repositorio deberás hacer las siguientes modificaciones sobre el CMAKE default o el que te reconozca CLION
                 1. Ve a Settings >> Build, Execution, Deployment >> CMake y creas una copia del perfil default. Por ahora, vas a tener que deshabilitar el perfil                      default dándole clic al checkbox que sale.
                 2. En la parte de environments le vas a agregar esto:
