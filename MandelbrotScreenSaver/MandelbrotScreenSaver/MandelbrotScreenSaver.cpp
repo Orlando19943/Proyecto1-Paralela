@@ -2,7 +2,6 @@
 //
 #include <omp.h>
 #include <SDL.h>
-//#include <alloca.h>
 #include "MandelbrotScreenSaver.h"
 
 constexpr int SCREEN_WIDTH	=	680;
@@ -131,13 +130,17 @@ inline double complex_sqr_mag(const complex& in) noexcept
 
 void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, double y_max, SDL_Surface** target)
 {
-	complex c;
-	complex z;
+	
 	const double x_step = (x_max - x_min) / (double)SCREEN_WIDTH;
 	const double y_step = (y_max - y_min) / (double)SCREEN_HEIGHT;
 	const int t_id = omp_get_thread_num();
 	int x = t_id * SCREEN_WIDTH / nprocs;
 	int y = 0;
+	int it;
+
+
+	complex* c = (complex*)_malloca(w * h / nprocs * sizeof(complex));
+	complex* z = (complex*)_malloca(w * h / nprocs * sizeof(complex));
 
 	Uint32* target_pixel;
 
@@ -145,8 +148,8 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
 	for (int i = 0; i < w; i++)
 		for (int j = 0; j < h; j++)
 		{
-			c.real = x_min + (double)(i+x) * x_step;
-			c.img = y_max - (double)j * y_step;
+			c[i + j].real = x_min + (double)(i+x) * x_step;
+			c[i + j].img = y_max - (double)j * y_step;
 #if SHOW_TARGET_ZOOM
 			if (abs(c.real - center.real) < 0.001 || abs(c.img - center.img) < 0.001)
 			{
@@ -158,26 +161,26 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
 #endif
 
 
-			z.real = 0;
-			z.img = 0;
-
-			for (int it = 0; it < MAX_ITER; it++)
+			z[i + j].real = 0;
+			z[i + j].img = 0;
+			
+#pragma omp simd
+			for (it = 0; it < MAX_ITER; it++)
 			{
-				z = complexSquare(z) + c;
-				if (complex_sqr_mag(z) > 4.0)
+				z[i + j] = complexSquare(z[i + j]) + c[i + j];
+
+
+				if (complex_sqr_mag(z[i + j]) > 4.0)
 				{
-					it++;
 
 					target_pixel = (Uint32*)((Uint8*)target[t_id]->pixels
 						+ j * target[t_id]->pitch
 						+ i * target[t_id]->format->BytesPerPixel);
-					
-					const uint8_t r = (/*(int)z.real * (int)z.img**/ it)%235 + 20;
-					const uint8_t g = (/*(int)z.real**/it)%235 + 20;
-					const uint8_t b = ((int)z.img*it)%235 + 20;
-					*target_pixel = SDL_MapRGB(target[t_id]->format, r, g, b);
 
-					break;
+					const uint8_t r = (/*(int)z.real * (int)z.img**/ it) % 235 + 20;
+					const uint8_t g = (/*(int)z.real**/it) % 235 + 20;
+					const uint8_t b = ((int)z[i + j].img * it) % 235 + 20;
+					*target_pixel = SDL_MapRGB(target[t_id]->format, r, g, b);
 				}
 			}
 			
