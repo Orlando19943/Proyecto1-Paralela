@@ -18,7 +18,6 @@ constexpr inline complex complexSquare(const complex & a) noexcept;
 inline double complex_sqr_mag(const complex& in) noexcept;
 
 void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, double y_max, SDL_Surface** target);
-//void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, double y_max, SDL_Surface** target, complex*, complex*, int*, bool*);
 //void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, double y_max, SDL_Surface** target, complex*, complex*, int*);
 
 

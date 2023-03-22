@@ -6,6 +6,7 @@
 #include <vector>
 #include <fstream>
 #include <string>
+#include <stdlib.h>
 
 constexpr int SCREEN_WIDTH = 680;
 constexpr int SCREEN_HEIGHT = 680;
@@ -18,6 +19,8 @@ SDL_Renderer* renderer;
 const int nprocs = omp_get_num_procs() - 2 >= 2 ? omp_get_num_procs() - 2 : 2;
 
 complex center;
+
+void drawMandelbrotSIMD(int w, int h, double x_min, double y_min, double x_max, double y_max, SDL_Surface** target, complex* c, complex* z);
 
 int main(int argc, char* argv[])
 {
@@ -49,6 +52,16 @@ int main(int argc, char* argv[])
 	double progress = 0;
 	const double base_step = 0.000002;
 	const double original_step = 0.241;
+
+	complex** c = new complex*[nprocs];
+	complex** z = new complex*[nprocs];
+
+	for (int i = 0; i < nprocs; i++) 
+	{
+		c[i] = new complex[SCREEN_WIDTH * SCREEN_HEIGHT / nprocs];
+		z[i] = new complex[SCREEN_WIDTH * SCREEN_HEIGHT / nprocs];
+	}
+
 
 	double step = original_step;
 	bool running = true;
@@ -85,11 +98,12 @@ int main(int argc, char* argv[])
 
 #pragma omp parallel num_threads (nprocs)
 		{
-			drawMandelbrot(SCREEN_WIDTH / nprocs, SCREEN_HEIGHT,
+			int t_id = omp_get_thread_num();
+			drawMandelbrotSIMD(SCREEN_WIDTH / nprocs, SCREEN_HEIGHT,
 				lerp(bot_left_bound.real, center.real, progress),
 				lerp(bot_left_bound.img, center.img, progress),
 				lerp(top_right_bound.real, center.real, progress),
-				lerp(top_right_bound.img, center.img, progress), fractal_parts);
+				lerp(top_right_bound.img, center.img, progress), fractal_parts, c[t_id], z[t_id]);
 		}
 		SDL_Rect rect;
 		rect.y = 0;
@@ -144,7 +158,7 @@ inline double complex_sqr_mag(const complex& in) noexcept
 
 #define SHOW_TARGET_ZOOM 0
 
-void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, double y_max, SDL_Surface** target)
+void drawMandelbrotSIMD(int w, int h, double x_min, double y_min, double x_max, double y_max, SDL_Surface** target, complex *c, complex *z)
 {
 
 	const double x_step = (x_max - x_min) / (double)SCREEN_WIDTH;
@@ -155,8 +169,6 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
 	int it;
 
 
-	complex* c = (complex*)_malloca(w * h / nprocs * sizeof(complex));
-	complex* z = (complex*)_malloca(w * h / nprocs * sizeof(complex));
 
 	Uint32* target_pixel;
 
@@ -204,6 +216,7 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
 					const uint8_t b = map(::sqrt(bright), 0, ::sqrt(255), 0, 255);
 
 					*target_pixel = SDL_MapRGB(target[0]->format, r, g, b);
+					break;
 				}
 			}
 
@@ -211,4 +224,3 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
 
 	SDL_UnlockSurface(target[t_id]);
 }
-
