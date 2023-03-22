@@ -2,6 +2,8 @@
 // or project specific include files.
 
 #pragma once
+#include <iostream>
+#include <string>
 
 #define LOOP_ONCE 1
 // TODO: Reference additional headers your program requires here.
@@ -33,3 +35,23 @@ constexpr inline complex operator+(complex a, complex b)
 	out.img = a.img + b.img;
 	return out;
 }
+
+std::string real_flag = "--real";
+std::string img_flag = "--img";
+std::string minstep_flag = "--minstep";
+std::string decay_flag = "--decay";
+std::string initstep_flag = "--initstep";
+std::string maxiter_flag = "--maxiter";
+
+
+std::string help_flag = "-h";
+std::string help_prompt = "Usage:\
+\n--real	<Real coordinate to zoom to. Ignored if value is outside of (-2, 2)>\
+\n--img		<Imaginary coordinate to zoom to. (don't write i) Ignored if value is outside of (-2, 2)>\
+\n--minstep <Step lower limit.		Ignored if greater than 1>\
+\n--decay	<Rate of step decay.	Ignored if greater than 1>\
+\n--initstep <Initial zoom rate.	Ignored if greater than 1>\
+\n--maxiter <Iteration cap.			Defaults to 250>";
+
+int MAX_ITER = 250;
+

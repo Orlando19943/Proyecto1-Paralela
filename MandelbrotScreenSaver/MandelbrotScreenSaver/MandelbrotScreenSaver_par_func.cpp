@@ -1,8 +1,5 @@
-﻿// MandelbrotScreenSaver.cpp : Defines the entry point for the application.
-//
-#include <omp.h>
+﻿#include <omp.h>
 #include <SDL.h>
-//#include <alloca.h>
 #include "MandelbrotScreenSaver.h"
 #include <fstream>
 #include <string>
@@ -10,7 +7,7 @@
 
 constexpr int SCREEN_WIDTH = 680;
 constexpr int SCREEN_HEIGHT = 680;
-int MAX_ITER = 250;
+
 
 using namespace std;
 SDL_Renderer* renderer;
@@ -22,6 +19,11 @@ complex center;
 
 int main(int argc, char* argv[])
 {
+	if (argc > 1 && argv[1] == help_flag)
+	{
+		cout << help_prompt << endl;
+		return 0;
+	}
 	vector<string> data;
 
 	SDL_Init(SDL_INIT_VIDEO);
@@ -37,6 +39,7 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < nprocs; i++)
 		fractal_parts[i] = SDL_CreateRGBSurface(0, SCREEN_WIDTH / nprocs, SCREEN_HEIGHT, 32, 0, 0, 0, 0);
 
+	//Punto objetivo para el zoom
 	center.real = -1.188;
 	center.img = 0.305;
 
@@ -47,10 +50,69 @@ int main(int argc, char* argv[])
 	top_right_bound.real = 2;
 	top_right_bound.img = 2;
 
-
+	//Parámetros de control de interpolación que implementa el zoom
 	double progress = 0;
-	const double base_step = 0.000002;
-	const double original_step = 0.241;
+	double min_step = 0.000002;
+	double original_step = 0.241;
+	double step_falloff = 0.80001;
+
+	vector<string> args;
+	for (int i = 1; i < argc; i++)
+		args.push_back(argv[i]);
+	try {
+		for (int i = 0; i < args.size(); i++)
+		{
+			if (args[i] == real_flag)
+			{
+				if (i + 1 >= args.size()) throw argv[i + 1];
+				double new_creal = stod(args[i + 1], 0);
+				if (new_creal > -2 && new_creal < 2) center.real = new_creal;
+			}
+			if (args[i] == img_flag)
+			{
+				if (i + 1 >= args.size()) throw argv[i + 1];
+				double new_cimg = stod(args[i + 1], 0);
+				if (new_cimg > -2 && new_cimg < 2) center.img = new_cimg;
+			}
+			if (args[i] == minstep_flag)
+			{
+				if (i + 1 >= args.size()) throw argv[i + 1];
+				double new_minstep = stod(args[i + 1], 0);
+				if (new_minstep > 1) min_step = new_minstep;
+			}
+			if (args[i] == decay_flag)
+			{
+				if (i + 1 >= args.size()) throw argv[i + 1];
+				double new_decay = stod(args[i + 1], 0);
+				if (new_decay > 1) step_falloff = new_decay;
+			}
+			if (args[i] == initstep_flag)
+			{
+				if (i + 1 >= args.size()) throw argv[i + 1];
+				double new_initstep = stod(args[i + 1], 0);
+				if (new_initstep > 1) original_step = new_initstep;
+			}
+			if (args[i] == maxiter_flag)
+			{
+				if (i + 1 >= args.size()) throw argv[i + 1];
+				int new_maxiter = stoi(args[i + 1], 0);
+				MAX_ITER = new_maxiter;
+			}
+		}
+	}
+	catch (char* faultyArg)
+	{
+		cerr << "Error in flag: " << faultyArg << endl;
+		cerr << help_prompt << endl;
+		return -1;
+	}
+	catch (std::invalid_argument e)
+	{
+		cerr << "Error! Check the usage with -h\n";
+		cerr << help_prompt << endl;
+		return -1;
+	}
+
 
 	double step = original_step;
 	bool running = true;
@@ -65,13 +127,9 @@ int main(int argc, char* argv[])
 			break;
 		}
 
-
-
-
-
 		Uint64 start = SDL_GetPerformanceCounter();
 
-		step = step * 0.80001 + base_step;
+		step = step * step_falloff + min_step;
 		progress += step;
 		if (progress > 0.9999999999999)
 		{
@@ -100,11 +158,16 @@ int main(int argc, char* argv[])
 			rect.w = fractal_parts[i]->w;
 			rect.h = fractal_parts[i]->h;
 			rect.x = SCREEN_WIDTH / nprocs * i;
+
+			//Copiar las partes a pantalla
 			SDL_BlitSurface(fractal_parts[i], NULL, screen_surface, &rect);
+
+			//Inicializar el siguiente frame con fondo negro
 			SDL_FillRect(fractal_parts[i], NULL, SDL_MapRGB(fractal_parts[i]->format, 0, 0, 0));
 		}
 
 		Uint64 end = SDL_GetPerformanceCounter();
+
 		float elapsed = (end - start) / (float)SDL_GetPerformanceFrequency();
 		string temp_data = to_string(1.0 / elapsed) + "," + to_string(elapsed) + "," + to_string(progress);
 		SDL_Log("FPS:\t%f \tDelta Time:\t %f \tProgress:\t %f", 1.0f / elapsed, elapsed, progress);
@@ -178,7 +241,10 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
 
 			for (int it = 0; it < MAX_ITER; it++)
 			{
+				//zn+1 = (z^2) + c
 				z = complexSquare(z) + c;
+
+				//Terminar la computación del punto y dibujar
 				if (complex_sqr_mag(z) > 4.0)
 				{
 					target_pixel = (Uint32*)((Uint8*)target[t_id]->pixels
