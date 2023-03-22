@@ -11,7 +11,7 @@ Primero, asegúrate de tener instaladas las siguientes dependencias
 [Descargar CLION](https://www.oracle.com/java/technologies/javase/jdk18-archive-downloads.html)
 * SDL → especialmente el que sea de acorde a tu compilador de c++
 [SDL MINGW Windows](https://github.com/libsdl-org/SDL/releases/download/release-2.26.4/SDL2-devel-2.26.4-mingw.zip)
-SDL Linux
+* SDL Linux
  ```sh
     sudo apt-get install libsdl2-dev
   ```
