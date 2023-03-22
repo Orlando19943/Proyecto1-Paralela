@@ -1,9 +1,9 @@
-// MandelbrotScreenSaver.cpp : Defines the entry point for the application.
-//
+
 #include <omp.h>
 #include <SDL.h>
 #include <cmath>
 #include <list>
+#include <fstream>
 
 #include "Complex.h"
 #include "Complex.cpp"
@@ -95,6 +95,7 @@ int main(int argc, char* argv[]){
         Uint64 end = SDL_GetPerformanceCounter();
         float elapsed = (end - start) / (float)SDL_GetPerformanceFrequency();
         string temp_data = to_string(1.0/elapsed) + "," + to_string(elapsed) + "," + to_string(progress);
+        SDL_Log("FPS:\t%f \tDelta Time:\t %f \tProgress:\t %f", 1.0f / elapsed , elapsed, progress);
         data.push_back(temp_data);
 
         SDL_UpdateWindowSurface(window);
@@ -104,12 +105,18 @@ int main(int argc, char* argv[]){
 
     SDL_DestroyRenderer(renderer);
     SDL_FreeSurface(screen_surface);
-
     SDL_FreeSurface(fractal[0]);
     delete[]fractal_parts;
     delete[]fractal;
     SDL_DestroyWindow(window);
     SDL_Quit();
+
+    // write data to file
+    std::ofstream file("../results02.csv", std::ios::out);
+    for (auto& line : data)
+        file << line << endl;
+    file.close();
+
     return 0;
 }
 
@@ -129,7 +136,7 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
 
 //  TODO this could be parallel
 # pragma omp parallel private(i,j,k,c, z, target_pixel) num_threads(number_process)
-# pragma omp for schedule(runtime)      
+# pragma omp for schedule(auto)
     for (i = 0; i < w; i++)
         for (j = 0; j < h; j++)
         {

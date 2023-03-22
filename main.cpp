@@ -3,6 +3,8 @@
 #include <omp.h>
 #include <SDL.h>
 #include <cmath>
+#include <list>
+#include <fstream>
 
 #include "Complex.h"
 #include "Complex.cpp"
@@ -26,6 +28,7 @@ uint8_t map (uint8_t x, uint8_t in_min, uint8_t in_max, uint8_t out_min, uint8_t
 int main(int argc, char* argv[]){
 
 //  SDL initial configuration
+    list<string> data;
 	SDL_Init(SDL_INIT_VIDEO);
 	SDL_Window* window = SDL_CreateWindow("Mandelbrot set screen saver", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 	renderer = SDL_CreateRenderer(window, -1, 0);
@@ -112,6 +115,12 @@ int main(int argc, char* argv[]){
 	delete[]fractal_parts;
 	SDL_DestroyWindow(window);
 	SDL_Quit();
+
+    std::ofstream file("results01.csv", std::ios::out);
+    for (auto& line : data)
+        file << line << endl;
+    file.close();
+
 	return 0;
 }
 
