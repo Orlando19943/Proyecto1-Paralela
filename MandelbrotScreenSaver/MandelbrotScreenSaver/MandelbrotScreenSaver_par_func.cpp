@@ -16,13 +16,14 @@ using namespace std;
 SDL_Renderer* renderer;
 
 
-const int nprocs = 1;
+const int nprocs = omp_get_num_procs() - 2 >= 2 ? omp_get_num_procs() - 2 : 2;
 
 complex center;
 
 int main(int argc, char* argv[])
 {
 	vector<string> data;
+
 	SDL_Init(SDL_INIT_VIDEO);
 
 	SDL_Window* window = SDL_CreateWindow("Mandelbrot set screen saver", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
@@ -30,6 +31,11 @@ int main(int argc, char* argv[])
 
 	SDL_Surface* screen_surface = SDL_GetWindowSurface(window);
 
+	SDL_Surface** fractal_parts = new SDL_Surface * [nprocs];
+
+	//Puede dejar pixeles muertos
+	for (int i = 0; i < nprocs; i++)
+		fractal_parts[i] = SDL_CreateRGBSurface(0, SCREEN_WIDTH / nprocs, SCREEN_HEIGHT, 32, 0, 0, 0, 0);
 
 	center.real = -1.188;
 	center.img = 0.305;
@@ -59,6 +65,10 @@ int main(int argc, char* argv[])
 			break;
 		}
 
+
+
+
+
 		Uint64 start = SDL_GetPerformanceCounter();
 
 		step = step * 0.80001 + base_step;
@@ -71,17 +81,28 @@ int main(int argc, char* argv[])
 			running = false;
 #endif
 		}
-		SDL_FillRect(screen_surface, NULL, SDL_MapRGB(screen_surface->format, 0, 0, 0));
 
-		drawMandelbrot(SCREEN_WIDTH / nprocs, SCREEN_HEIGHT,
-			lerp(bot_left_bound.real, center.real, progress),
-			lerp(bot_left_bound.img, center.img, progress),
-			lerp(top_right_bound.real, center.real, progress),
-			lerp(top_right_bound.img, center.img, progress), &screen_surface);
-		
+
+
+
+#pragma omp parallel num_threads (nprocs)
+		{
+			drawMandelbrot(SCREEN_WIDTH / nprocs, SCREEN_HEIGHT,
+				lerp(bot_left_bound.real, center.real, progress),
+				lerp(bot_left_bound.img, center.img, progress),
+				lerp(top_right_bound.real, center.real, progress),
+				lerp(top_right_bound.img, center.img, progress), fractal_parts);
+		}
 		SDL_Rect rect;
 		rect.y = 0;
-
+		for (int i = 0; i < nprocs; i++)
+		{
+			rect.w = fractal_parts[i]->w;
+			rect.h = fractal_parts[i]->h;
+			rect.x = SCREEN_WIDTH / nprocs * i;
+			SDL_BlitSurface(fractal_parts[i], NULL, screen_surface, &rect);
+			SDL_FillRect(fractal_parts[i], NULL, SDL_MapRGB(fractal_parts[i]->format, 0, 0, 0));
+		}
 
 		Uint64 end = SDL_GetPerformanceCounter();
 		float elapsed = (end - start) / (float)SDL_GetPerformanceFrequency();
@@ -94,12 +115,13 @@ int main(int argc, char* argv[])
 	}
 	SDL_DestroyRenderer(renderer);
 	SDL_FreeSurface(screen_surface);
-
+	for (int i = 0; i < nprocs; i++)
+		SDL_FreeSurface(fractal_parts[i]);
+	delete[]fractal_parts;
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 
-	// write data to file
-	std::ofstream file("../../../../../results_seq.csv", std::ios::out);
+	std::ofstream file("../../../../../results_par_func.csv", std::ios::out);
 	for (auto& line : data)
 		file << line << "\n";
 	file.close();
@@ -128,7 +150,7 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
 	complex z;
 	const double x_step = (x_max - x_min) / (double)SCREEN_WIDTH;
 	const double y_step = (y_max - y_min) / (double)SCREEN_HEIGHT;
-	const int t_id = 0;
+	const int t_id = omp_get_thread_num();
 	int x = t_id * SCREEN_WIDTH / nprocs;
 	int y = 0;
 
@@ -159,8 +181,6 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
 				z = complexSquare(z) + c;
 				if (complex_sqr_mag(z) > 4.0)
 				{
-					it++;
-
 					target_pixel = (Uint32*)((Uint8*)target[t_id]->pixels
 						+ j * target[t_id]->pitch
 						+ i * target[t_id]->format->BytesPerPixel);
@@ -185,4 +205,6 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
 
 	SDL_UnlockSurface(target[t_id]);
 }
+
+
 
