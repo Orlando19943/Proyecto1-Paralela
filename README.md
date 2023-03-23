@@ -34,6 +34,7 @@ Una vez se tenga configurado SDL ya se puede compilar y posteriormente ejecutar 
 * Velocidad de zoom
 Esto lo puedes hacer en donde aparece el nombre asignado a tu ejecutable (en la parte superior a la derecha de CLION) le das click a la flecha hacia abajo >> Editar configuraciones >> Ingresas los argumentos en Argumentos de comandos, estos solo deben de estar separados por espacios.
 
-Una vez tengas la configuración anterior, puede dar click al botón de play y te mostrará el screen saver del conjunto de Mandelbrot
-![image](https://user-images.githubusercontent.com/54074539/227061984-2c6edec2-ec78-47ed-92f4-dec3032b3ada.png)
+Una vez tengas la configuración anterior, puede dar click al botón de play y te mostrará el screen saver del conjunto de Mandelbrot<br/>
+![mandelbruht](https://user-images.githubusercontent.com/54918136/227076621-09f7e87f-f7e0-46cf-950c-3814883fe863.png)
+
 
