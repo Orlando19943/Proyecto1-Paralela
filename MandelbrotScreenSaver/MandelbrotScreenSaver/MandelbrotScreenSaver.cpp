@@ -162,7 +162,7 @@ int main(int argc, char* argv[]){
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 
-	// write data to file
+// 	escritura de resultados a un archivo
 	std::ofstream file("../../../../../results_seq.csv", std::ios::out);
 	for (auto& line : data)
 		file << line << "\n";
