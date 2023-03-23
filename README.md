@@ -33,6 +33,7 @@ Una vez se tenga configurado SDL ya se puede compilar y posteriormente ejecutar 
 * Dirección de zoom
 * Número de iteraciones
 * Velocidad de zoom
+
 Esto lo puedes hacer en donde aparece el nombre asignado a tu ejecutable (en la parte superior a la derecha de CLION) le das click a la flecha hacia abajo >> Editar configuraciones >> Ingresas los argumentos en Argumentos de comandos, estos solo deben de estar separados por espacios.
 <br/>
 Una vez tengas la configuración anterior, puede dar click al botón de play y te mostrará el screen saver del conjunto de Mandelbrot<br/>
