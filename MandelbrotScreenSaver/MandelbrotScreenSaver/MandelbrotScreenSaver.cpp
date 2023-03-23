@@ -17,14 +17,16 @@ const int nprocs = 1;
 
 complex center;
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]){
+	
+// 	Lectura de argumentos de línea
 	if (argc > 1 && argv[1] == help_flag)
 	{
 		cout << help_prompt << endl;
 		return 0;
 	}
 
+// 	Inicialización de SDL 
 	vector<string> data;
 	SDL_Init(SDL_INIT_VIDEO);
 
@@ -49,6 +51,7 @@ int main(int argc, char* argv[])
 	double original_step = 0.241;
 	double step_falloff = 0.80001;
 
+// 	validación de cada uno de los argumentos de línea
 	vector<string> args;
 	for (int i = 1; i < argc; i++)
 		args.push_back(argv[i]);
@@ -93,6 +96,7 @@ int main(int argc, char* argv[])
 			}
 		}
 	}
+// 	En caso de ingresar una opción inválida le muestra al error el usuario
 	catch (char* faultyArg)
 	{
 		cerr << "Error in flag: " << faultyArg << endl;
@@ -167,6 +171,7 @@ int main(int argc, char* argv[])
 }
 
 
+// Cálculo del cuadraro de un número complejo
 constexpr inline complex complexSquare(const complex& in) noexcept
 {
 	complex out;
@@ -175,6 +180,7 @@ constexpr inline complex complexSquare(const complex& in) noexcept
 	return out;
 }
 
+// Cálculo de la magnitud al cuadrado de un número complejo 
 inline double complex_sqr_mag(const complex& in) noexcept
 {
 	return in.real * in.real + in.img * in.img;
@@ -182,6 +188,7 @@ inline double complex_sqr_mag(const complex& in) noexcept
 
 #define SHOW_TARGET_ZOOM 0
 
+// Realización de cálculos iterativos para definición de color y "pintar" el pixel correspondiente
 void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, double y_max, SDL_Surface** target)
 {
 	complex c;
@@ -195,9 +202,11 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
 	Uint32* target_pixel;
 
 	SDL_LockSurface(target[t_id]);
+// 	Recorre toda la pantalla para pintar cada uno de los pixeles
 	for (int i = 0; i < w; i++)
 		for (int j = 0; j < h; j++)
 		{
+// 			Valor de la constante c
 			c.real = x_min + (double)(i + x) * x_step;
 			c.img = y_max - (double)j * y_step;
 #if SHOW_TARGET_ZOOM
@@ -214,9 +223,12 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
 			z.real = 0;
 			z.img = 0;
 
+// 			Cálculo iterativo de los valores del conjunto de Mandelbrot
 			for (int it = 0; it < MAX_ITER; it++)
 			{
 				z = complexSquare(z) + c;
+				
+// 				Condición de divergencia
 				if (complex_sqr_mag(z) > 4.0)
 				{
 					it++;
