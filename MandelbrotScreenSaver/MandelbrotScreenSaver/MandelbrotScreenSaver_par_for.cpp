@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     vector<string> data;
-    //  SDL initial configuration
+    //  SDL configuración inicial
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window* window = SDL_CreateWindow("Mandelbrot set screen saver", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
     renderer = SDL_CreateRenderer(window, -1, 0);
@@ -53,6 +53,8 @@ int main(int argc, char* argv[]) {
     double step_falloff = 0.80001;
 
     vector<string> args;
+    
+//  validación de argumentos de línea de comandos
     for (int i = 1; i < argc; i++)
         args.push_back(argv[i]);
     try {
@@ -96,6 +98,7 @@ int main(int argc, char* argv[]) {
             }
         }
     }
+//  En caso ingrese un argumento inválido le muestra error al usuario
     catch (char* faultyArg)
     {
         cerr << "Error in flag: " << faultyArg << endl;
@@ -166,7 +169,7 @@ int main(int argc, char* argv[]) {
     SDL_DestroyWindow(window);
     SDL_Quit();
 
-    // write data to file
+    // escribe los resultados a un archivo
     std::ofstream file("../../../../../results_par_for.csv", std::ios::out);
     for (auto& line : data)
         file << line << "\n";
@@ -183,18 +186,19 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
     const double x_step = (x_max - x_min) / (double)SCREEN_WIDTH;
     const double y_step = (y_max - y_min) / (double)SCREEN_HEIGHT;
 
-    //  iterators
+    //  iteradores
     int i, j, k;
 
     Uint32* target_pixel;
 
 
-    //  TODO this could be parallel
+// paralelización de for y definición de una directiva de calendarización
 #pragma omp parallel private(i,j,k,c, z, target_pixel) num_threads(number_process)
 #pragma omp for schedule(runtime)
     for (i = 0; i < w; i++)
         for (j = 0; j < h; j++)
         {
+//          valor de la constante c
             c.real = x_min + (double)(i)*x_step;
             c.img = y_max - (double)(j)*y_step;
 
@@ -213,10 +217,10 @@ void drawMandelbrot(int w, int h, double x_min, double y_min, double x_max, doub
             z.img = 0;
 
             for (k = 0; k < MAX_ITER; k++) {
-                //              recurrent calculation of zn
+                //cálculo recurrente de zn
                 z = complexSquare(z) + c;
 
-                //  escape condition
+                // condición de divergencia
                 if (complex_sqr_mag(z) > 4.0) 
                 {
 
