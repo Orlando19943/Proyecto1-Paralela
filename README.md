@@ -28,6 +28,7 @@ La configuración de SDL en CLION se realizará mediante CMAKE, para ello debes 
                      * CMAKE_PREFIX_PATH=...\libs <br/>
   3. En el caso de Windows: Por default, sdl también va a requerir un runtime library, para ello se copia el archivo de  SDL2-2.26.3\x86_64-w64          mingw32\bin\SDL.dll en cmake-debug-blah-blah.<br/>
 <br/>
+
 Una vez se tenga configurado SDL ya se puede compilar y posteriormente ejecutar el archivo, solo ten en cuenta que necesitas definir los siguientes parámetros de línea de comandos:
 * Dirección de zoom
 * Número de iteraciones
