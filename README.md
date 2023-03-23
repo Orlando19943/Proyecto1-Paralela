@@ -28,11 +28,10 @@ La configuración de SDL en CLION se realizará mediante CMAKE, para ello debes 
                      * CMAKE_PREFIX_PATH=...\libs <br/>
   3. En el caso de Windows: Por default, sdl también va a requerir un runtime library, para ello se copia el archivo de  SDL2-2.26.3\x86_64-w64          mingw32\bin\SDL.dll en cmake-debug-blah-blah.<br/>
 <br/>
-Una vez se tenga configurado SDL ya se puede compilar y posteriormente ejecutar el archivo, solo ten en cuenta que necesitas definir los siguientes parámetros de línea de comandos:<br/>
+Una vez se tenga configurado SDL ya se puede compilar y posteriormente ejecutar el archivo, solo ten en cuenta que necesitas definir los siguientes parámetros de línea de comandos:
 * Dirección de zoom
 * Número de iteraciones
 * Velocidad de zoom
-<br/>
 Esto lo puedes hacer en donde aparece el nombre asignado a tu ejecutable (en la parte superior a la derecha de CLION) le das click a la flecha hacia abajo >> Editar configuraciones >> Ingresas los argumentos en Argumentos de comandos, estos solo deben de estar separados por espacios.
 <br/>
 Una vez tengas la configuración anterior, puede dar click al botón de play y te mostrará el screen saver del conjunto de Mandelbrot<br/>
